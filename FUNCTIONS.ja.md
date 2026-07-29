@@ -277,6 +277,65 @@ Set Variable [ $_ ; zim_SetScript ( "main" ; Get(FileName) ; "OnImageEvent" ) ]
 
 ---
 
+## zim_ExifRead ( image )
+
+```
+zim_ExifRead ( image )
+```
+
+**コンテナ**の画像から EXIF を読み、JSON で返します。ビューアが起動していなくても
+動きます（解析はプラグイン内で完結するため、FileMaker Server でも使えます）。
+
+```json
+{
+  "hasExif": true,
+  "camera":   { "make": "SONY", "model": "ILCE-7M4" },
+  "lens":     { "model": "FE 50mm F1.8", "focalLength": 50 },
+  "exposure": { "time": 0.005, "fNumber": 2.8, "iso": 400 },
+  "dateTime": { "original": "2026:07:05 13:20:11" },
+  "image":    { "orientation": 6, "description": "Site survey photo" },
+  "gps":      { "latitude": 35.6586, "longitude": 139.7454, "altitude": 12.3 },
+  "copyright": "(C) 2026 veltrea"
+}
+```
+
+- タグが無い項目はキーごと出ません。読む前にキーの有無を確認してください。
+- EXIF を持たない画像はエラーではなく `{"hasExif":false}` を返します。
+- JPEG でない、または EXIF が壊れている場合は `ERROR: …` を返します。
+- `gps` は実際に座標が入っている場合だけ現れます。
+
+```
+Set Variable [ $exif ; zim_ExifRead ( Photos::Image ) ]
+Set Variable [ $shot ; JSONGetElement ( $exif ; "dateTime.original" ) ]
+Set Variable [ $lat  ; JSONGetElement ( $exif ; "gps.latitude" ) ]
+```
+
+---
+
+## zim_ExifReadPath ( filePath )
+
+```
+zim_ExifReadPath ( filePath )
+```
+
+`zim_ExifRead` と同じですが、コンテナではなくディスク上のファイルから読みます。
+`zim_LoadList` でファイルを順に送りながら使うときに便利です。
+
+---
+
+## EXIF の書き込みについて
+
+ZooImage は EXIF を**読みますが、書きません**。タグの編集・GPS の付与・メタデータの
+除去はこのプラグインの担当ではありません。書き換えが必要な場合は別プラグインの
+**ZooEXIF** を使ってください。
+
+これはライセンス上の意図的な判断です。画質を落とさずにメタデータだけ書き換えるには
+libexif / libiptcdata が必要ですが、どちらも LGPL（コピーレフト）です。ZooImage は
+読み取りに easyexif（BSD-2-Clause）を使い、依存をパーミッシブに保っています。
+詳細は [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) を参照してください。
+
+---
+
 ## エラー
 
 失敗した関数は `ERROR: <メッセージ>` を返します。メッセージは下記のプロトコルエラーコードに

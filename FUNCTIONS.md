@@ -277,6 +277,66 @@ miss a change, poll `zim_GetState` from an `OnTimer` script instead — see
 
 ---
 
+## zim_ExifRead ( image )
+
+```
+zim_ExifRead ( image )
+```
+
+Reads the EXIF of a **container** image and returns it as JSON. Works without the
+viewer running — the parsing happens inside the plug-in, so it is also usable on
+FileMaker Server.
+
+```json
+{
+  "hasExif": true,
+  "camera":   { "make": "SONY", "model": "ILCE-7M4" },
+  "lens":     { "model": "FE 50mm F1.8", "focalLength": 50 },
+  "exposure": { "time": 0.005, "fNumber": 2.8, "iso": 400 },
+  "dateTime": { "original": "2026:07:05 13:20:11" },
+  "image":    { "orientation": 6, "description": "Site survey photo" },
+  "gps":      { "latitude": 35.6586, "longitude": 139.7454, "altitude": 12.3 },
+  "copyright": "(C) 2026 veltrea"
+}
+```
+
+- Keys are omitted when the tag is absent, so test for a key before reading it.
+- An image **without** EXIF is not an error — it returns `{"hasExif":false}`.
+- A non-JPEG or a corrupt EXIF block returns `ERROR: …`.
+- `gps` appears only when the file actually carries coordinates.
+
+```
+Set Variable [ $exif ; zim_ExifRead ( Photos::Image ) ]
+Set Variable [ $shot ; JSONGetElement ( $exif ; "dateTime.original" ) ]
+Set Variable [ $lat  ; JSONGetElement ( $exif ; "gps.latitude" ) ]
+```
+
+---
+
+## zim_ExifReadPath ( filePath )
+
+```
+zim_ExifReadPath ( filePath )
+```
+
+Same as `zim_ExifRead`, but reads from a file on disk instead of a container.
+Useful together with `zim_LoadList` when you are paging through files.
+
+---
+
+## A note on writing EXIF
+
+ZooImage **reads** EXIF but does not write it. Editing tags, setting GPS, or
+stripping metadata are not part of this plug-in — use the separate **ZooEXIF**
+plug-in for that.
+
+This is a deliberate licensing decision: writing metadata without re-encoding the
+image requires libexif / libiptcdata, both of which are LGPL (copyleft). ZooImage
+keeps its dependencies permissive by reading with easyexif (BSD-2-Clause). See
+[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+---
+
 ## Errors
 
 A failing function returns `ERROR: <message>`. The message maps onto the protocol error codes

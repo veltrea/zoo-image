@@ -39,6 +39,38 @@ These files are not covered by the ZooImage license.
 
 ---
 
+## easyexif
+
+- **Used by**: `ZooImage.fmplugin` — EXIF reading for `zim_ExifRead` / `zim_ExifReadPath`
+- **Version bundled**: upstream `master` (2 source files, vendored 2026-07-30)
+- **License**: BSD 2-Clause
+- **Copyright**: Copyright (c) 2010-2016 Mayank Lahiri
+- **Upstream**: https://github.com/mayanklahiri/easyexif
+- **Full text**: in the leading comment block of `plugin/third_party/easyexif/exif.h`
+
+### Why not libexif / なぜ libexif ではないのか
+
+An earlier revision read EXIF with **libexif (LGPL-2.1)** and **libiptcdata
+(LGPL-2.0)**, statically linked. Both are copyleft: linking them statically
+obliges the distributor to give recipients a way to relink against a modified
+version of the library (LGPL-2.1 §6). To keep the whole distribution
+permissive and attribution-only, they were removed and replaced with easyexif.
+
+The trade-off is deliberate: **ZooImage reads EXIF but does not write it.**
+Writing metadata without re-encoding needs the heavier libexif/libiptcdata
+machinery. If you need to edit EXIF/IPTC/XMP, use the separate ZooEXIF plug-in.
+
+以前の版は **libexif (LGPL-2.1)** と **libiptcdata (LGPL-2.0)** を静的リンクして
+EXIF を読んでいました。どちらもコピーレフトで、静的リンクすると受領者がライブラリを
+差し替えて再リンクできる手段を用意する義務（LGPL-2.1 §6）が生じます。配布物全体を
+パーミッシブ（義務は帰属表示のみ）に保つため、これらを外して easyexif に置き換えました。
+
+代償は意図的なものです。**ZooImage は EXIF を読みますが、書きません。** 画質を落とさずに
+メタデータだけ書き換えるには libexif/libiptcdata 相当の仕組みが要ります。編集が必要な
+場合は別プラグインの ZooEXIF を使ってください。
+
+---
+
 ## Tauri
 
 - **Used by**: `ZooImage.app` (the bundled helper) — application framework, windowing, WebView

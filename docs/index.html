@@ -253,6 +253,10 @@ Set Variable [ $_ ; <span class="f">zim_Navigate</span> ( <span class="s">"main"
         <h3 data-n="STANDALONE">単体でも動く</h3>
         <p>同梱のビューアは普通の画像ビューアとしても使えます。ドラッグ＆ドロップ、File ▸ Open、キーボード操作に対応。</p>
       </article>
+      <article>
+        <h3 data-n="EXIF">撮影情報を読む</h3>
+        <p>カメラ・レンズ・絞り・ISO・撮影日時・GPS を JSON で取得できます（<code>zim_ExifRead</code>）。ビューアを起動せずに動くので FileMaker Server でも使えます。読み取り専用です。</p>
+      </article>
     </div>
   </div>
 </section>
@@ -262,7 +266,7 @@ Set Variable [ $_ ; <span class="f">zim_Navigate</span> ( <span class="s">"main"
   <div class="wrap">
     <div class="sec-head">
       <div class="no">02 — 関数</div>
-      <h2>覚えることは、15 個だけ。</h2>
+      <h2>覚えることは、17 個だけ。</h2>
       <p>すべて <code>zim_</code> で始まります。成功すれば値を、失敗すれば <code>ERROR:</code> で始まる文字列を返します。</p>
     </div>
 
@@ -282,6 +286,8 @@ Set Variable [ $_ ; <span class="f">zim_Navigate</span> ( <span class="s">"main"
           <tr><td>zim_Navigate</td><td>next / prev / first / last / 番号</td></tr>
           <tr><td>zim_GetState</td><td>現在の状態を JSON で取得</td></tr>
           <tr><td>zim_SetScript</td><td>イベントで起動するスクリプトを登録</td></tr>
+          <tr><td>zim_ExifRead</td><td>コンテナ画像の EXIF を JSON で読む</td></tr>
+          <tr><td>zim_ExifReadPath</td><td>ファイルの EXIF を JSON で読む</td></tr>
           <tr><td>zim_Version</td><td>バージョン。読み込み確認にも使える</td></tr>
           <tr><td>zim_IsRunning</td><td>ビューアが起動しているか</td></tr>
           <tr><td>zim_LastError</td><td>直近のエラーメッセージ</td></tr>

@@ -35,6 +35,9 @@ FileMaker Pro ──(calc)── ZooImage.fmplugin ──JSONL/TCP 127.0.0.1─�
 - **Event callbacks** to FileMaker scripts, plus an `OnTimer` + `zim_GetState` polling fallback
 - Multiple simultaneous viewers, addressed by name (default `main`)
 - Standalone viewer mode (usable without FileMaker)
+- **Read EXIF** — camera, lens, exposure, capture time and GPS as JSON
+  (`zim_ExifRead` / `zim_ExifReadPath`). Works without the viewer, so it also runs
+  on FileMaker Server. Reading only; use the ZooEXIF plug-in to edit metadata.
 
 See [FUNCTIONS.md](FUNCTIONS.md) for the per-function reference, [SPEC.md](SPEC.md) for behavior
 and conventions, [protocol/protocol.md](protocol/protocol.md) for the wire protocol, and

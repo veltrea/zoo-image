@@ -33,6 +33,8 @@ copy-pasteable FileMaker scripts are in [fmp/scripts.md](fmp/scripts.md).
 | `zim_Navigate( viewer ; to )` | `next`/`prev`/`first`/`last`/`<index>` | `{index,path,count}` JSON |
 | `zim_GetState( viewer )` | `viewer` (optional, or `"*"`) | state JSON |
 | `zim_SetScript( viewer ; file ; script )` | FileMaker file + script names | `OK` |
+| `zim_ExifRead( image )` | container image | EXIF as JSON (`{"hasExif":false}` when absent) |
+| `zim_ExifReadPath( filePath )` | path to an image file | EXIF as JSON |
 
 ## `zim_Show` options (JSON object, all optional)
 

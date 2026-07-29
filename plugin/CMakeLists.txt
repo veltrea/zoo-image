@@ -34,17 +34,40 @@ if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "" FORCE)
 endif()
 
+# EXIF の読み取りは easyexif（third_party/easyexif, BSD-2-Clause）を同梱して使う。
+# 外部ライブラリへの依存は無く、ソース 2 ファイルを一緒にコンパイルするだけ。
+#
+# 当初は ZooEXIF と同じ libexif + libiptcdata を静的リンクしていたが、どちらも LGPL の
+# コピーレフトで、静的リンクすると利用者にライブラリ差し替えの手段を用意する義務
+# (LGPL-2.1 §6) が生じる。パーミッシブに統一するため easyexif に置き換え、
+# 書き換え機能は持たないことにした（書き換えが要るときは ZooEXIF プラグインを使う）。
 set(ZOOIMAGE_SOURCES
     src/ZooImage.cpp
     src/helper_client.cpp
     src/container.cpp
     src/event_queue.cpp
+    src/exif_glue.cpp
+    src/exif_json.cpp
+    third_party/easyexif/exif.cpp
 )
 
 add_library(ZooImage MODULE ${ZOOIMAGE_SOURCES})
 
 target_include_directories(ZooImage PRIVATE
     ${FM_HEADERS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party
+)
+
+# EXIF 読み取りの単体テスト。FMX に依存しない層(exif_json)だけを対象にするので
+# FileMaker 無しで回せる。
+#   ./exif_test <fixtures-dir>
+add_executable(exif_test
+    tests/exif_test.cpp
+    src/exif_json.cpp
+    third_party/easyexif/exif.cpp
+)
+target_include_directories(exif_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party
 )

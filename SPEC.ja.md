@@ -33,6 +33,8 @@ IPC ワイヤプロトコルは [protocol/protocol.md](protocol/protocol.md)、�
 | `zim_Navigate( viewer ; to )` | `next`/`prev`/`first`/`last`/`<index>` | `{index,path,count}` JSON |
 | `zim_GetState( viewer )` | `viewer`（省略可、または `"*"`） | 状態 JSON |
 | `zim_SetScript( viewer ; file ; script )` | FileMaker ファイル名 + スクリプト名 | `OK` |
+| `zim_ExifRead( image )` | コンテナの画像 | EXIF の JSON（無ければ `{"hasExif":false}`） |
+| `zim_ExifReadPath( filePath )` | 画像ファイルのパス | EXIF の JSON |
 
 ## `zim_Show` の options（JSON オブジェクト、すべて省略可）
 

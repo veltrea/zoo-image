@@ -36,6 +36,9 @@ FileMaker Pro ──(計算)── ZooImage.fmplugin ──JSONL/TCP 127.0.0.1�
 - FileMaker スクリプトへの**イベントコールバック**、および `OnTimer` + `zim_GetState` ポーリング代替
 - 複数ビューア同時表示（`viewer` 名で識別、既定 `main`）
 - 単体ビューアモード（FileMaker なしで使える）
+- **EXIF の読み取り** — カメラ・レンズ・露出・撮影日時・GPS を JSON で取得
+  （`zim_ExifRead` / `zim_ExifReadPath`）。ビューアなしで動くので FileMaker Server でも
+  使えます。読み取り専用で、書き換えは ZooEXIF プラグインの担当です。
 
 関数ごとのリファレンスは [FUNCTIONS.ja.md](FUNCTIONS.ja.md)、挙動と規約は
 [SPEC.ja.md](SPEC.ja.md)、ワイヤプロトコルは [protocol/protocol.md](protocol/protocol.md)、

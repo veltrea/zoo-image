@@ -77,6 +77,20 @@ fi
 
 [ -d "$PLUGIN" ] || { c_bad "plug-in bundle missing: $PLUGIN"; }
 
+# ---------------------------------------------------------------- EXIF エンジン
+# libzooexif（ZooEXIF から統合）を実 JPEG に対して検証する。FMX に依存しないので
+# FileMaker 無しで回せる。ビルド時に一緒に作られる exif_test を使う。
+c_say "EXIF engine tests (libzooexif against real JPEGs)"
+EXIF_BIN="$HERE/plugin/build/exif_test"
+if [ ! -x "$EXIF_BIN" ]; then
+  c_bad "exif_test not built (expected at $EXIF_BIN)"
+elif "$EXIF_BIN" "$HERE/plugin/tests/fixtures" >/tmp/zooimage-exif.log 2>&1; then
+  c_ok "EXIF engine tests passed ($(grep -oE '[0-9]+ checks' /tmp/zooimage-exif.log | tail -1))"
+else
+  c_bad "EXIF engine tests failed:"
+  grep -E 'FAIL' /tmp/zooimage-exif.log | head -8 | sed 's/^/       /'
+fi
+
 # ---------------------------------------------------------------- 3. 命名
 c_say "Naming — plug-in bundle"
 check_eq "ZooImage"              "$(plist "$PLUGIN" CFBundleExecutable)" "CFBundleExecutable"
@@ -93,23 +107,48 @@ c_say "Naming — compiled binary"
 BIN="$PLUGIN/Contents/MacOS/ZooImage"
 if [ -f "$BIN" ]; then
   c_ok "executable present at Contents/MacOS/ZooImage"
-  if strings "$BIN" | grep -qx 'Zimg1nnYYnn'; then
+  # 注意: `strings … | grep -q` は使わない。grep -q はマッチした時点で終了するため、
+  # まだ出力中の strings が SIGPIPE で落ち、set -o pipefail のせいでパイプライン全体が
+  # 失敗扱いになる（バイナリが大きいほど再現しやすい）。件数を数える形なら入力を
+  # 最後まで読むので起きない。
+  if [ "$(strings "$BIN" | grep -cx 'Zimg1nnYYnn')" -gt 0 ]; then
     c_ok "options string 'Zimg1nnYYnn' present (ID matches CFBundleSignature)"
   else
     c_bad "options string 'Zimg1nnYYnn' not found in the binary"
   fi
   # universal バイナリでは各 arch に同じ文字列が入るため、必ず重複を除いて数える。
   FN_COUNT=$(strings "$BIN" | grep -oE '^zim_[A-Za-z]+$' | sort -u | wc -l | tr -d ' ')
-  check_eq "15" "$FN_COUNT" "registered zim_ function count (unique)"
+  check_eq "17" "$FN_COUNT" "registered zim_ function count (unique)"
+  EXIF_FN=$(strings "$BIN" | grep -oE '^zim_Exif[A-Za-z]+$' | sort -u | wc -l | tr -d ' ')
+  check_eq "2" "$EXIF_FN" "EXIF function count (read-only)"
   ARCHS=$(lipo -archs "$BIN" 2>/dev/null || echo "?")
   check_eq "x86_64 arm64" "$ARCHS" "universal binary architectures"
-  if strings "$BIN" | grep -q 'ZooImage.app/Contents/MacOS'; then
+  if [ "$(strings "$BIN" | grep -c 'ZooImage\.app/Contents/MacOS')" -gt 0 ]; then
     c_ok "helper lookup path points at ZooImage.app"
   else
     c_bad "helper lookup path in the binary does not mention ZooImage.app"
   fi
 else
   c_bad "executable missing: $BIN"
+fi
+
+# ---------------------------------------------------------------- ライセンス
+# 配布物をパーミッシブに保つ。コピーレフト(LGPL/GPL)のライブラリを取り込むと、
+# 利用者にライブラリ差し替えの手段を用意する義務(LGPL-2.1 §6)が生じるため入れない。
+# EXIF 読み取りは easyexif(BSD-2)。以前 libexif/libiptcdata(LGPL) を使っていた名残が
+# 復活していないかを毎回見る。
+c_say "Licensing — no copyleft dependencies"
+if [ "$(otool -L "$BIN" | tail -n +2 | grep -ciE 'libexif|libiptcdata')" -gt 0 ]; then
+  c_bad "an LGPL library (libexif/libiptcdata) is linked into the binary"
+else
+  c_ok "no LGPL library linked into the binary"
+fi
+COPYLEFT=$(grep -rliE 'lesser general public|library general public|GNU General Public' \
+  plugin/src plugin/third_party 2>/dev/null || true)
+if [ -z "$COPYLEFT" ]; then
+  c_ok "no copyleft license text under plugin/src or plugin/third_party"
+else
+  c_bad "copyleft license text found:"; printf '%s\n' "$COPYLEFT" | head -5 | sed 's/^/       /'
 fi
 
 c_say "Naming — no legacy names anywhere in the source tree"

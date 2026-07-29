@@ -14,6 +14,7 @@
 
 #include "container.hpp"
 #include "event_queue.hpp"
+#include "exif_glue.hpp"
 #include "helper_client.hpp"
 #include "nlohmann/json.hpp"
 
@@ -52,6 +53,9 @@ enum {
     kFuncNavigate = 290,
     kFuncGetState = 300,
     kFuncSetScript = 310,
+    // EXIF 読み取り（書き換えは扱わない。必要なら ZooEXIF プラグインを使う）
+    kFuncExifRead = 400,
+    kFuncExifReadPath = 410,
 };
 
 // ---- 文字列変換 ----
@@ -282,6 +286,32 @@ Do_SetScript(short, const fmx::ExprEnv&, const fmx::DataVect& parms, fmx::Data& 
     return Reply(results, r, "OK");
 }
 
+// ==== EXIF 読み取り関数 ====
+//
+// 実体は src/exif_glue.cpp（easyexif のラッパー）。ヘルパーを介さずプラグイン内で
+// 完結するため、ビューアが起動していなくても、FileMaker Server 上でも動く。
+// グルー側は bool + メッセージを返すので、ここで ZooImage の規約
+//（成功なら値／失敗なら "ERROR: <message>" ＋ gLastError）に揃える。
+#define ZIM_EXIF_PROC(FnName, GlueCall)                                              \
+    FMX_PROC(fmx::errcode)                                                           \
+    FnName(short, const fmx::ExprEnv&, const fmx::DataVect& parms, fmx::Data& results) { \
+        std::string err;                                                             \
+        try {                                                                        \
+            if (GlueCall(parms, results, err)) return 0;                             \
+        } catch (const std::exception& e) {                                          \
+            err = e.what();                                                          \
+        } catch (...) {                                                              \
+            err = "unknown exception";                                               \
+        }                                                                            \
+        gLastError = err;                                                            \
+        return SetText(results, "ERROR: " + err);                                    \
+    }
+
+ZIM_EXIF_PROC(Do_ExifRead,     zimg::exif::Read)
+ZIM_EXIF_PROC(Do_ExifReadPath, zimg::exif::ReadPath)
+
+#undef ZIM_EXIF_PROC
+
 // ==== 登録テーブル ====
 struct FuncDef {
     short id;
@@ -309,6 +339,9 @@ const FuncDef kFuncs[] = {
     {kFuncNavigate, "zim_Navigate", "zim_Navigate( viewer ; to )", "Zimg|zim_Navigate — next/prev/first/last/index", 2, 2, Do_Navigate},
     {kFuncGetState, "zim_GetState", "zim_GetState( {viewer} )", "Zimg|zim_GetState — viewer state as JSON (\"*\" for all)", 0, 1, Do_GetState},
     {kFuncSetScript, "zim_SetScript", "zim_SetScript( viewer ; file ; script )", "Zimg|zim_SetScript — FileMaker script for viewer events", 3, 3, Do_SetScript},
+
+    {kFuncExifRead, "zim_ExifRead", "zim_ExifRead( image )", "Zimg|zim_ExifRead — read the EXIF of a container image as JSON", 1, 1, Do_ExifRead},
+    {kFuncExifReadPath, "zim_ExifReadPath", "zim_ExifReadPath( filePath )", "Zimg|zim_ExifReadPath — read the EXIF of an image file as JSON", 1, 1, Do_ExifReadPath},
 };
 
 fmx::ptrtype DoInit(fmx::int16 version) {
