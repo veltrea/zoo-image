@@ -113,9 +113,13 @@ else
 fi
 
 c_say "Naming — no legacy names anywhere in the source tree"
+# 除外する 2 ファイル:
+#   verify-all.sh … このチェック自身がパターン文字列を持つ（自己参照）
+#   HANDOVER.md   … 旧名からの改名履歴を意図して記述している
 LEGACY=$(grep -rn 'zImG\|ZooImg\|Zoo Image\|com\.veltrea\.zimg\|[^a-z]zi_' . \
   --exclude-dir=build --exclude-dir=node_modules --exclude-dir=target \
-  --exclude-dir=dist --exclude-dir=.git --exclude-dir=export 2>/dev/null | grep -v '^\./scripts/verify-all\.sh:' || true)
+  --exclude-dir=dist --exclude-dir=.git --exclude-dir=export \
+  --exclude=verify-all.sh --exclude=HANDOVER.md 2>/dev/null || true)
 if [ -z "$LEGACY" ]; then
   c_ok "no legacy identifiers (zImG / ZooImg / 'Zoo Image' / zi_ / com.veltrea.zimg)"
 else
