@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZooImage</title>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+
+  <body>
+    <div id="app" data-theme="rich">
+      <!-- リッチテーマのツールバー(ミニマルでは非表示) -->
+      <header id="toolbar" class="chrome">
+        <div class="tb-group">
+          <button data-cmd="open" title="Open… (⌘O)">📂</button>
+        </div>
+        <div class="tb-group">
+          <button data-cmd="prev" title="Previous (←)">◀</button>
+          <span id="counter" class="counter">–</span>
+          <button data-cmd="next" title="Next (→)">▶</button>
+        </div>
+        <div class="tb-group">
+          <button data-cmd="zoom-out" title="Zoom out (−)">−</button>
+          <span id="zoom-label" class="zoom-label">100%</span>
+          <button data-cmd="zoom-in" title="Zoom in (+)">＋</button>
+          <button data-cmd="fit" title="Fit (0)">Fit</button>
+          <button data-cmd="actual" title="Actual size (1)">1:1</button>
+        </div>
+        <div class="tb-spacer"></div>
+        <div class="tb-group">
+          <button data-cmd="fullscreen" title="Fullscreen (F)">⛶</button>
+          <button data-cmd="toggle-theme" title="Toggle theme (T)">◐</button>
+          <button data-cmd="toggle-info" title="Info panel (I)">ℹ︎</button>
+        </div>
+      </header>
+
+      <div id="body">
+        <!-- 画像ステージ -->
+        <main id="stage">
+          <img id="image" alt="" draggable="false" />
+          <div id="dropzone" class="dropzone">
+            <div class="dz-inner">
+              <div class="dz-icon">🖼️</div>
+              <div class="dz-text">Drop an image here, or press ⌘O</div>
+            </div>
+          </div>
+          <!-- ミニマル用の最小 HUD(ホバー時のみ) -->
+          <div id="hud" class="hud"></div>
+        </main>
+
+        <!-- リッチテーマの情報パネル(初期は非表示) -->
+        <aside id="info" class="chrome" hidden>
+          <h2>Info</h2>
+          <dl id="info-list"></dl>
+        </aside>
+      </div>
+
+      <!-- リッチテーマのフィルムストリップ(プレイリスト時) -->
+      <div id="filmstrip" class="chrome" hidden></div>
+
+      <!-- リッチテーマのステータスバー -->
+      <footer id="statusbar" class="chrome">
+        <span id="status-name">ZooImage</span>
+        <span class="sb-spacer"></span>
+        <span id="status-dims"></span>
+        <span id="status-zoom"></span>
+      </footer>
+    </div>
+  </body>
+</html>
