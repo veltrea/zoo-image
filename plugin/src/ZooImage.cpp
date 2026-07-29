@@ -53,7 +53,7 @@ enum {
     kFuncNavigate = 290,
     kFuncGetState = 300,
     kFuncSetScript = 310,
-    // EXIF 読み取り（書き換えは扱わない。必要なら ZooEXIF プラグインを使う）
+    // EXIF 読み取り（書き換えは扱わない）
     kFuncExifRead = 400,
     kFuncExifReadPath = 410,
 };

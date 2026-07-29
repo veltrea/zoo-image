@@ -4,7 +4,7 @@
 // そのまま呼べる。FMX との橋渡しは exif_glue.{hpp,cpp} が担当する。
 //
 // 読み取りエンジンは easyexif（BSD-2-Clause / 依存なし）。ZooImage は「見る」道具なので
-// EXIF は読み取り専用で、書き換えは扱わない（必要なら ZooEXIF プラグインを使う）。
+// EXIF は読み取り専用で、書き換えは扱わない。
 #pragma once
 
 #include <string>

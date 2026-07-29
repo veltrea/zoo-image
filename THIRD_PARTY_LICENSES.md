@@ -58,7 +58,8 @@ permissive and attribution-only, they were removed and replaced with easyexif.
 
 The trade-off is deliberate: **ZooImage reads EXIF but does not write it.**
 Writing metadata without re-encoding needs the heavier libexif/libiptcdata
-machinery. If you need to edit EXIF/IPTC/XMP, use the separate ZooEXIF plug-in.
+machinery, so that capability is out of scope rather than a reason to take on
+copyleft obligations.
 
 以前の版は **libexif (LGPL-2.1)** と **libiptcdata (LGPL-2.0)** を静的リンクして
 EXIF を読んでいました。どちらもコピーレフトで、静的リンクすると受領者がライブラリを
@@ -66,8 +67,8 @@ EXIF を読んでいました。どちらもコピーレフトで、静的リン
 パーミッシブ（義務は帰属表示のみ）に保つため、これらを外して easyexif に置き換えました。
 
 代償は意図的なものです。**ZooImage は EXIF を読みますが、書きません。** 画質を落とさずに
-メタデータだけ書き換えるには libexif/libiptcdata 相当の仕組みが要ります。編集が必要な
-場合は別プラグインの ZooEXIF を使ってください。
+メタデータだけ書き換えるには libexif/libiptcdata 相当の仕組みが要るため、その機能は
+コピーレフトの義務を負ってまで実装せず、対象外としています。
 
 ---
 

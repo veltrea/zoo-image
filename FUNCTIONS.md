@@ -326,14 +326,15 @@ Useful together with `zim_LoadList` when you are paging through files.
 
 ## A note on writing EXIF
 
-ZooImage **reads** EXIF but does not write it. Editing tags, setting GPS, or
-stripping metadata are not part of this plug-in — use the separate **ZooEXIF**
-plug-in for that.
+ZooImage **reads** EXIF but does not write it. Editing tags, setting GPS and
+stripping metadata are out of scope.
 
-This is a deliberate licensing decision: writing metadata without re-encoding the
-image requires libexif / libiptcdata, both of which are LGPL (copyleft). ZooImage
-keeps its dependencies permissive by reading with easyexif (BSD-2-Clause). See
-[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+This is a deliberate licensing decision. Writing metadata without re-encoding the
+image requires libexif / libiptcdata, both of which are LGPL (copyleft): taking
+them on would oblige anyone who redistributes this plug-in — including a developer
+shipping it inside a customer's solution — to provide a way to relink against a
+modified copy of the library. ZooImage stays attribution-only by reading with
+easyexif (BSD-2-Clause). See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ---
 

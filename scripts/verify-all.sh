@@ -78,16 +78,16 @@ fi
 [ -d "$PLUGIN" ] || { c_bad "plug-in bundle missing: $PLUGIN"; }
 
 # ---------------------------------------------------------------- EXIF エンジン
-# libzooexif（ZooEXIF から統合）を実 JPEG に対して検証する。FMX に依存しないので
+# EXIF 読み取り（easyexif + exif_json）を実 JPEG に対して検証する。FMX に依存しないので
 # FileMaker 無しで回せる。ビルド時に一緒に作られる exif_test を使う。
-c_say "EXIF engine tests (libzooexif against real JPEGs)"
+c_say "EXIF reading tests (easyexif against real JPEGs)"
 EXIF_BIN="$HERE/plugin/build/exif_test"
 if [ ! -x "$EXIF_BIN" ]; then
   c_bad "exif_test not built (expected at $EXIF_BIN)"
 elif "$EXIF_BIN" "$HERE/plugin/tests/fixtures" >/tmp/zooimage-exif.log 2>&1; then
-  c_ok "EXIF engine tests passed ($(grep -oE '[0-9]+ checks' /tmp/zooimage-exif.log | tail -1))"
+  c_ok "EXIF reading tests passed ($(grep -oE '[0-9]+ checks' /tmp/zooimage-exif.log | tail -1))"
 else
-  c_bad "EXIF engine tests failed:"
+  c_bad "EXIF reading tests failed:"
   grep -E 'FAIL' /tmp/zooimage-exif.log | head -8 | sed 's/^/       /'
 fi
 
@@ -135,8 +135,8 @@ fi
 # ---------------------------------------------------------------- ライセンス
 # 配布物をパーミッシブに保つ。コピーレフト(LGPL/GPL)のライブラリを取り込むと、
 # 利用者にライブラリ差し替えの手段を用意する義務(LGPL-2.1 §6)が生じるため入れない。
-# EXIF 読み取りは easyexif(BSD-2)。以前 libexif/libiptcdata(LGPL) を使っていた名残が
-# 復活していないかを毎回見る。
+# EXIF 読み取りは easyexif(BSD-2)。以前 libexif/libiptcdata(LGPL) を使っていた名残や、
+# 新たなコピーレフト依存が入り込んでいないかを毎回見る。
 c_say "Licensing — no copyleft dependencies"
 if [ "$(otool -L "$BIN" | tail -n +2 | grep -ciE 'libexif|libiptcdata')" -gt 0 ]; then
   c_bad "an LGPL library (libexif/libiptcdata) is linked into the binary"

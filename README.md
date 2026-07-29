@@ -37,7 +37,7 @@ FileMaker Pro ──(calc)── ZooImage.fmplugin ──JSONL/TCP 127.0.0.1─�
 - Standalone viewer mode (usable without FileMaker)
 - **Read EXIF** — camera, lens, exposure, capture time and GPS as JSON
   (`zim_ExifRead` / `zim_ExifReadPath`). Works without the viewer, so it also runs
-  on FileMaker Server. Reading only; use the ZooEXIF plug-in to edit metadata.
+  on FileMaker Server. Reading only — writing metadata is out of scope (see FUNCTIONS.md for why).
 
 See [FUNCTIONS.md](FUNCTIONS.md) for the per-function reference, [SPEC.md](SPEC.md) for behavior
 and conventions, [protocol/protocol.md](protocol/protocol.md) for the wire protocol, and

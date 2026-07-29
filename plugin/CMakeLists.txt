@@ -37,10 +37,9 @@ endif()
 # EXIF の読み取りは easyexif（third_party/easyexif, BSD-2-Clause）を同梱して使う。
 # 外部ライブラリへの依存は無く、ソース 2 ファイルを一緒にコンパイルするだけ。
 #
-# 当初は ZooEXIF と同じ libexif + libiptcdata を静的リンクしていたが、どちらも LGPL の
-# コピーレフトで、静的リンクすると利用者にライブラリ差し替えの手段を用意する義務
-# (LGPL-2.1 §6) が生じる。パーミッシブに統一するため easyexif に置き換え、
-# 書き換え機能は持たないことにした（書き換えが要るときは ZooEXIF プラグインを使う）。
+# 以前は libexif + libiptcdata を静的リンクしていたが、どちらも LGPL のコピーレフトで、
+# 静的リンクすると再配布する側にライブラリ差し替えの手段を用意する義務 (LGPL-2.1 §6) が
+# 生じる。パーミッシブに統一するため easyexif に置き換え、書き換え機能は持たないことにした。
 set(ZOOIMAGE_SOURCES
     src/ZooImage.cpp
     src/helper_client.cpp
