@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZooImage — FileMaker のための画像ビューア</title>
+<meta name="description" content="FileMaker から画像を独立ウィンドウで開く C++ プラグイン。コンテナでもパスでも、ズーム・パン・プレイリスト送りができ、計算エンジンを止めません。macOS 対応・無料・オープンソース。">
+<meta property="og:title" content="ZooImage — FileMaker のための画像ビューア">
+<meta property="og:description" content="コンテナでもパスでも、1 関数で開く。ズーム・パン・プレイリスト送り。計算エンジンは止まりません。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ---- 暗室のパレット（ここを変えるとサイト全体の色が変わります） ---- */
+  --ink:#08080a;          /* 背景・最も暗い */
+  --ink-2:#101013;        /* パネル */
+  --ink-3:#191920;        /* 罫線 */
+  --paper:#e9e6e1;        /* 本文 */
+  --paper-dim:#9a968f;    /* 補助テキスト */
+  --safelight:#e0794a;    /* 暗室の安全光（アクセント） */
+  --safelight-2:#f0b27a;  /* 明るい方 */
+  --glow:rgba(224,121,74,.16);
+
+  --mincho:"Zen Old Mincho",serif;
+  --gothic:"Zen Kaku Gothic New",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+
+  --edge:1px solid var(--ink-3);
+  --max:1080px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink); color:var(--paper);
+  font-family:var(--gothic); font-weight:400; line-height:1.85;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+/* フィルム粒子。暗室の質感 */
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:99; opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.wrap{max-width:var(--max); margin:0 auto; padding:0 28px}
+a{color:inherit}
+
+/* ============ 見出し ============ */
+h1,h2,h3{font-family:var(--mincho); font-weight:700; line-height:1.3; letter-spacing:.01em}
+
+/* ============ ヘッダ ============ */
+header{
+  position:sticky; top:0; z-index:50; backdrop-filter:blur(14px);
+  background:rgba(8,8,10,.72); border-bottom:var(--edge);
+}
+header .wrap{display:flex; align-items:center; justify-content:space-between; height:62px}
+.brand{font-family:var(--mincho); font-weight:900; font-size:19px; letter-spacing:.06em}
+.brand span{color:var(--safelight)}
+nav{display:flex; gap:26px; font-size:13.5px; color:var(--paper-dim)}
+nav a{text-decoration:none; transition:color .2s}
+nav a:hover{color:var(--safelight-2)}
+@media(max-width:640px){nav a:not(.gh){display:none}}
+
+/* ============ ヒーロー ============ */
+.hero{position:relative; padding:118px 0 96px; overflow:hidden}
+/* 安全光が斜めに差し込む */
+.hero::before{
+  content:""; position:absolute; top:-42%; right:-18%; width:78vw; height:78vw;
+  background:radial-gradient(circle at 50% 50%, var(--glow) 0%, transparent 62%);
+  pointer-events:none;
+}
+.hero .wrap{position:relative}
+.kicker{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.24em; color:var(--safelight);
+  text-transform:uppercase; margin-bottom:26px;
+}
+.hero h1{
+  font-size:clamp(44px,7.4vw,86px); font-weight:900; letter-spacing:-.015em; line-height:1.12;
+}
+.hero h1 em{font-style:normal; color:var(--safelight); }
+.lede{
+  margin-top:26px; max-width:33em; font-size:clamp(15.5px,1.7vw,18px); color:#c9c5be;
+}
+.cta{display:flex; flex-wrap:wrap; gap:13px; margin-top:42px; align-items:center}
+.btn{
+  display:inline-flex; align-items:center; gap:9px; text-decoration:none;
+  padding:13px 26px; font-size:14.5px; font-weight:700; letter-spacing:.02em;
+  border:1px solid var(--safelight); color:var(--ink); background:var(--safelight);
+  transition:transform .18s ease, box-shadow .25s ease, background .2s;
+}
+.btn:hover{transform:translateY(-2px); box-shadow:0 12px 34px -10px var(--safelight); background:var(--safelight-2)}
+.btn.ghost{background:transparent; color:var(--paper); border-color:var(--ink-3)}
+.btn.ghost:hover{border-color:var(--safelight); color:var(--safelight-2); box-shadow:none}
+.meta{font-family:var(--mono); font-size:12px; color:var(--paper-dim); margin-top:20px}
+.meta b{color:var(--paper); font-weight:400}
+
+/* ============ 1 行で開く（コード） ============ */
+.oneline{margin-top:64px; border:var(--edge); background:var(--ink-2); position:relative}
+.oneline .bar{
+  display:flex; align-items:center; gap:8px; padding:11px 16px; border-bottom:var(--edge);
+  font-family:var(--mono); font-size:11px; color:var(--paper-dim); letter-spacing:.08em;
+}
+.dot{width:9px; height:9px; border-radius:50%; background:var(--ink-3)}
+.dot.on{background:var(--safelight)}
+.oneline pre{
+  padding:26px 22px; overflow-x:auto; font-family:var(--mono);
+  font-size:14px; line-height:2; color:#d8d4cd;
+}
+.oneline .c{color:var(--paper-dim)}
+.oneline .f{color:var(--safelight-2)}
+.oneline .s{color:#8fb98a}
+
+/* ============ セクション ============ */
+section{padding:96px 0; border-top:var(--edge)}
+.sec-head{margin-bottom:56px}
+.sec-head .no{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.22em; color:var(--safelight);
+}
+.sec-head h2{font-size:clamp(27px,3.6vw,40px); margin-top:12px}
+.sec-head p{color:var(--paper-dim); margin-top:14px; max-width:36em; font-size:15px}
+
+/* 特徴：意図的に段差をつける */
+.feat{display:grid; grid-template-columns:repeat(auto-fit,minmax(258px,1fr)); gap:1px; background:var(--ink-3)}
+.feat article{background:var(--ink); padding:38px 30px; transition:background .3s}
+.feat article:hover{background:var(--ink-2)}
+.feat article:nth-child(even){transform:translateY(22px)}
+@media(max-width:720px){.feat article:nth-child(even){transform:none}}
+.feat h3{font-size:19px; margin-bottom:13px}
+.feat h3::before{
+  content:attr(data-n); display:block; font-family:var(--mono); font-size:11px;
+  color:var(--safelight); letter-spacing:.18em; margin-bottom:11px; font-weight:400;
+}
+.feat p{font-size:14.4px; color:var(--paper-dim); line-height:1.9}
+
+/* 関数表 */
+.fn{width:100%; border-collapse:collapse; font-size:14px}
+.fn th,.fn td{text-align:left; padding:14px 12px; border-bottom:var(--edge); vertical-align:top}
+.fn th{font-family:var(--mono); font-size:11px; letter-spacing:.16em; color:var(--paper-dim); font-weight:400; text-transform:uppercase}
+.fn td:first-child{font-family:var(--mono); color:var(--safelight-2); white-space:nowrap; font-size:13.4px}
+.fn td:last-child{color:var(--paper-dim)}
+.tablewrap{overflow-x:auto}
+
+/* インストール手順 */
+.steps{counter-reset:s; display:grid; gap:26px}
+.step{display:grid; grid-template-columns:52px 1fr; gap:20px; align-items:start}
+.step .n{
+  counter-increment:s; font-family:var(--mincho); font-size:30px; font-weight:900;
+  color:var(--ink-3); line-height:1;
+}
+.step .n::before{content:counter(s,decimal-leading-zero)}
+.step h3{font-size:16.5px; margin-bottom:7px}
+.step p{font-size:14.4px; color:var(--paper-dim)}
+.step code{font-family:var(--mono); font-size:13px; color:var(--safelight-2); background:var(--ink-2); padding:2px 7px; border:var(--edge)}
+
+/* 注意書き */
+.note{
+  margin-top:38px; padding:22px 24px; border-left:2px solid var(--safelight);
+  background:var(--ink-2); font-size:14px; color:var(--paper-dim);
+}
+.note b{color:var(--paper); font-weight:500}
+
+/* フッタ */
+footer{border-top:var(--edge); padding:52px 0 66px; color:var(--paper-dim); font-size:13.4px}
+footer .wrap{display:flex; flex-wrap:wrap; gap:26px; justify-content:space-between; align-items:flex-end}
+footer a{color:var(--paper-dim); text-decoration:none; border-bottom:1px solid var(--ink-3); transition:color .2s,border-color .2s}
+footer a:hover{color:var(--safelight-2); border-color:var(--safelight)}
+.flinks{display:flex; gap:22px; flex-wrap:wrap}
+
+/* ============ 読み込み時の段差アニメーション ============ */
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+.r{animation:rise .82s cubic-bezier(.2,.7,.2,1) both}
+.r1{animation-delay:.05s}.r2{animation-delay:.14s}.r3{animation-delay:.23s}
+.r4{animation-delay:.32s}.r5{animation-delay:.42s}
+@media(prefers-reduced-motion:reduce){.r{animation:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">Zoo<span>Image</span></div>
+    <nav>
+      <a href="#features">特長</a>
+      <a href="#functions">関数</a>
+      <a href="#install">導入</a>
+      <a class="gh" href="https://github.com/veltrea/zoo-image">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ ヒーロー ============ -->
+<div class="hero">
+  <div class="wrap">
+    <div class="kicker r r1">FileMaker Plug-in / macOS</div>
+    <h1 class="r r2">画像を、<em>止めずに</em><br>見せる。</h1>
+    <p class="lede r r3">
+      FileMaker の外部関数は計算エンジンの上で同期実行されます。そこで重い画像を描けば、
+      画面はそのあいだ固まります。ZooImage は描画を専用のビューアアプリに預ける薄いプラグインです。
+      コンテナでもファイルパスでも、関数ひとつで独立したウィンドウに開きます。
+    </p>
+
+    <div class="cta r r4">
+      <a class="btn" href="https://github.com/veltrea/zoo-image/releases/latest">最新版をダウンロード</a>
+      <a class="btn ghost" href="https://github.com/veltrea/zoo-image">ソースを見る</a>
+    </div>
+    <p class="meta r r4">
+      <b>v0.1.0</b> ・ macOS universal（Apple Silicon + Intel）・ BSD-3-Clause ・ 無料
+    </p>
+
+    <div class="oneline r r5">
+      <div class="bar"><span class="dot on"></span><span class="dot"></span><span class="dot"></span>&nbsp;&nbsp;FileMaker スクリプト</div>
+<pre><span class="c"># コンテナフィールドの画像を、ズーム合わせで開く</span>
+Set Variable [ $v ; <span class="f">zim_Show</span> ( Photos::Image ; <span class="s">"{\"theme\":\"rich\",\"zoom\":\"fit\"}"</span> ) ]
+
+<span class="c"># 開いたあとも FileMaker 側から操作できる</span>
+Set Variable [ $_ ; <span class="f">zim_SetZoom</span> ( <span class="s">"main"</span> ; 2 ) ]
+Set Variable [ $_ ; <span class="f">zim_Navigate</span> ( <span class="s">"main"</span> ; <span class="s">"next"</span> ) ]</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 特長 ============ -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="no">01 — 特長</div>
+      <h2>ビューアは別プロセス。<br>だから固まらない。</h2>
+      <p>プラグイン本体は薄い IPC クライアントに徹しています。表示・ズーム・スクロールはすべて同梱のビューアアプリ側で動くため、FileMaker の操作感はそのままです。</p>
+    </div>
+
+    <div class="feat">
+      <article>
+        <h3 data-n="CONTAINER / PATH">どちらでも開ける</h3>
+        <p>コンテナフィールドの値でも、ディスク上のファイルパスでも、同じ <code>zim_Show</code> で開きます。コンテナは自動で一時ファイルに書き出されます。</p>
+      </article>
+      <article>
+        <h3 data-n="ZOOM / PAN">思い通りに拡大</h3>
+        <p>数値指定のほか <code>fit</code> / <code>fill</code> / <code>actual</code> / <code>in</code> / <code>out</code>。ホイールでのズーム、ドラッグでのパンにも対応します。</p>
+      </article>
+      <article>
+        <h3 data-n="PLAYLIST">連続して見る</h3>
+        <p>パスの配列を渡せば、← → キーとフィルムストリップで送れます。スクリプトからも <code>zim_Navigate</code> で移動できます。</p>
+      </article>
+      <article>
+        <h3 data-n="EVENTS">操作を受け取る</h3>
+        <p>閲覧・ズーム・移動・クリック・ドロップといった操作を、FileMaker スクリプトの引数として受け取れます。</p>
+      </article>
+      <article>
+        <h3 data-n="MULTI WINDOW">複数を並べる</h3>
+        <p>ビューアは名前で識別します。<code>before</code> と <code>after</code> のように、任意の数のウィンドウを同時に扱えます。</p>
+      </article>
+      <article>
+        <h3 data-n="STANDALONE">単体でも動く</h3>
+        <p>同梱のビューアは普通の画像ビューアとしても使えます。ドラッグ＆ドロップ、File ▸ Open、キーボード操作に対応。</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 関数 ============ -->
+<section id="functions">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="no">02 — 関数</div>
+      <h2>覚えることは、15 個だけ。</h2>
+      <p>すべて <code>zim_</code> で始まります。成功すれば値を、失敗すれば <code>ERROR:</code> で始まる文字列を返します。</p>
+    </div>
+
+    <div class="tablewrap">
+      <table class="fn">
+        <thead><tr><th>関数</th><th>はたらき</th></tr></thead>
+        <tbody>
+          <tr><td>zim_Show</td><td>コンテナまたはパスをビューアで開く</td></tr>
+          <tr><td>zim_Close</td><td>ビューアを閉じる（<code>"*"</code> ですべて）</td></tr>
+          <tr><td>zim_SetZoom</td><td>倍率、または fit / fill / actual / in / out</td></tr>
+          <tr><td>zim_SetWindow</td><td>位置とサイズ。空の引数は据え置き</td></tr>
+          <tr><td>zim_SetTheme</td><td>rich（情報パネル付き）／ minimal（枠なし）</td></tr>
+          <tr><td>zim_SetTitle</td><td>ウィンドウタイトルを変える</td></tr>
+          <tr><td>zim_Focus</td><td>ウィンドウを最前面に出す</td></tr>
+          <tr><td>zim_SetFullscreen</td><td>全画面の切り替え</td></tr>
+          <tr><td>zim_LoadList</td><td>プレイリストを読み込む</td></tr>
+          <tr><td>zim_Navigate</td><td>next / prev / first / last / 番号</td></tr>
+          <tr><td>zim_GetState</td><td>現在の状態を JSON で取得</td></tr>
+          <tr><td>zim_SetScript</td><td>イベントで起動するスクリプトを登録</td></tr>
+          <tr><td>zim_Version</td><td>バージョン。読み込み確認にも使える</td></tr>
+          <tr><td>zim_IsRunning</td><td>ビューアが起動しているか</td></tr>
+          <tr><td>zim_LastError</td><td>直近のエラーメッセージ</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <b>引数と戻り値の詳しい仕様</b>は
+      <a href="https://github.com/veltrea/zoo-image/blob/main/FUNCTIONS.ja.md">関数リファレンス</a>に、
+      コピーして使えるスクリプト例は
+      <a href="https://github.com/veltrea/zoo-image/blob/main/fmp/scripts.md">サンプル集</a>にあります。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 導入 ============ -->
+<section id="install">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="no">03 — 導入</div>
+      <h2>入れて、再起動するだけ。</h2>
+      <p>管理者権限は要りません。配布ファイルはコード署名済みです。</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="n"></div>
+        <div>
+          <h3>ダウンロードする</h3>
+          <p>リリースページから <code>ZooImage-0.1.0-macOS.zip</code> を取得して展開します。コンテナ経由で配りたい場合は <code>.fmplugin.gz</code> の方を使います。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n"></div>
+        <div>
+          <h3>Extensions に置く</h3>
+          <p><code>~/Library/Application Support/FileMaker/Extensions/</code> に <code>ZooImage.fmplugin</code> を入れます。スクリプトから配る場合は「プラグインファイルをインストール」ステップが使えます。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n"></div>
+        <div>
+          <h3>FileMaker を再起動する</h3>
+          <p>プラグインは起動時に読み込まれます。<code>zim_Version</code> が値を返せば成功です。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>初回だけ確認が出ることがあります。</b>
+      Apple の有料開発者登録を使わず、ad-hoc 署名で配布しているためです。
+      その場合は Finder で右クリック →「開く」を選ぶか、システム設定のプライバシーとセキュリティから許可してください。
+      配布ファイルの署名は、公開前に実機で検証しています。
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="brand" style="font-size:16px; margin-bottom:9px">Zoo<span>Image</span></div>
+      © 2026 veltrea ・ BSD-3-Clause
+    </div>
+    <div class="flinks">
+      <a href="https://github.com/veltrea/zoo-image">GitHub</a>
+      <a href="https://github.com/veltrea/zoo-image/releases/latest">ダウンロード</a>
+      <a href="https://github.com/veltrea/zoo-image/blob/main/FUNCTIONS.ja.md">関数リファレンス</a>
+      <a href="https://github.com/veltrea/zoo-image/blob/main/SPEC.ja.md">仕様</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
